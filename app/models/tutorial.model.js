@@ -1,4 +1,4 @@
-module.exports = mongoose => {
+module.exports = (mongoose, mongoosePaginate) => {
     var schema = mongoose.Schema(
       {
         title: String,
@@ -13,6 +13,9 @@ module.exports = mongoose => {
       object.id = _id;
       return object;
     });
+
+    //paginate
+    schema.plugin(mongoosePaginate);
   
     const Tutorial = mongoose.model("tutorial", schema);
     return Tutorial;

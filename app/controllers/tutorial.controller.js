@@ -1,6 +1,13 @@
 const db = require("../models");
 const Tutorial = db.tutorials;
 
+const getPagination = (page, size) => {
+  const limit = size ? +size : 3;
+  const offset = page ? page * limit : 0;
+
+  return { limit, offset };
+};
+
 // Create and Save a new Tutorial
 exports.create = (req, res) => {
     // Validate request
@@ -32,20 +39,29 @@ exports.create = (req, res) => {
 
 // Retrieve all Tutorials from the database.
 exports.findAll = (req, res) => {
-    const title = req.query.title;
-    var condition = title ? { title: { $regex: new RegExp(title), $options: "i" } } : {};
-  
-    Tutorial.find(condition)
-      .then(data => {
-        res.send(data);
-      })
-      .catch(err => {
-        res.status(500).send({
-          message:
-            err.message || "Some error occurred while retrieving tutorials."
-        });
+  const { page, size, title } = req.query;
+  var condition = title
+    ? { title: { $regex: new RegExp(title), $options: "i" } }
+    : {};
+
+  const { limit, offset } = getPagination(page, size);
+
+  Tutorial.paginate(condition, { offset, limit })
+    .then((data) => {
+      res.send({
+        totalItems: data.totalDocs,
+        tutorials: data.docs,
+        totalPages: data.totalPages,
+        currentPage: data.page - 1,
       });
-  };
+    })
+    .catch((err) => {
+      res.status(500).send({
+        message:
+          err.message || "Some error occurred while retrieving tutorials.",
+      });
+    });
+};
 
 // Find a single Tutorial with an id
 exports.findOne = (req, res) => {
@@ -128,14 +144,22 @@ exports.deleteAll = (req, res) => {
   };
 // Find all published Tutorials
 exports.findAllPublished = (req, res) => {
-    Tutorial.find({ published: true })
-      .then(data => {
-        res.send(data);
-      })
-      .catch(err => {
-        res.status(500).send({
-          message:
-            err.message || "Some error occurred while retrieving tutorials."
-        });
+  const { page, size } = req.query;
+  const { limit, offset } = getPagination(page, size);
+
+  Tutorial.paginate({ published: true }, { offset, limit })
+    .then((data) => {
+      res.send({
+        totalItems: data.totalDocs,
+        tutorials: data.docs,
+        totalPages: data.totalPages,
+        currentPage: data.page - 1,
       });
-  };
+    })
+    .catch((err) => {
+      res.status(500).send({
+        message:
+          err.message || "Some error occurred while retrieving tutorials.",
+      });
+    });
+};
